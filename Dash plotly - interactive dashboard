@@ -39,6 +39,10 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
 
                                 html.P("Payload range (Kg):"),
                                 # TASK 3: Add a slider to select payload range
+                                dcc.RangeSlider(id='payload-slider',
+                                min=min_payload, max=max_payload, step=1000,
+                                marks={i: str(i) for i in range(0, int(max_payload)+1, 1000)},
+                                value=[min_payload, max_payload]),
                                 #dcc.RangeSlider(id='payload-slider',...)
 
                                 # TASK 4: Add a scatter chart to show the correlation between payload and launch success
@@ -77,6 +81,37 @@ def get_pie_chart(entered_site):
         # return the outcomes piechart for a selected site
 # TASK 4:
 # Add a callback function for `site-dropdown` and `payload-slider` as inputs, `success-payload-scatter-chart` as output
+
+@app.callback(
+    Output('success-payload-scatter-chart', 'figure'),
+    [Input('site-dropdown', 'value'),
+     Input('payload-slider', 'value')]
+)
+def get_scatter_chart(entered_site, payload_range):
+
+    low, high = payload_range
+
+    # filter by payload first
+    filtered_df = spacex_df[
+        (spacex_df['Payload Mass (kg)'] >= low) &
+        (spacex_df['Payload Mass (kg)'] <= high)
+    ]
+
+    # filter by site if not ALL
+    if entered_site != 'ALL':
+        filtered_df = filtered_df[
+            filtered_df['Launch Site'] == entered_site
+        ]
+
+    fig = px.scatter(
+        filtered_df,
+        x='Payload Mass (kg)',   # column names only
+        y='class',
+        color='Booster Version Category',
+        title='Success vs Payload Mass'
+    )
+
+    return fig
 
 
 # Run the app
